@@ -1,0 +1,123 @@
+schemaVersion: 1
+identifier: feature-marker
+displayName: "Feature Marker — End-to-End Feature Workflow"
+description: >-
+  Automates feature development from requirements to pull request.
+  5-phase workflow: Inputs Gate → Analysis → Implementation → Tests → Commit & PR.
+  Stack-agnostic: auto-detects iOS/Swift, Node.js/TypeScript, Rust, Python, Go.
+  Supports 5 execution modes: Full Workflow, Tasks Only, Ralph Loop, Spec-Driven, Test Only.
+  Reads CLAUDE.md conventions and adapts the workflow automatically.
+  Includes checkpoint/resume, multi-agent spec review, and platform-aware testing.
+author: Vinicius Carvalho
+minMCSVersion: "2026.3.26"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PROMPTS — collected at `mcs sync` time, injected into templates via __VAR__
+# ─────────────────────────────────────────────────────────────────────────────
+prompts:
+  - key: EXECUTION_MODE
+    type: input
+    label: "Default execution mode — full | tasks-only | spec-driven | test-only:"
+    default: "full"
+
+  - key: DOCS_PATH
+    type: input
+    label: "Path for feature documents (relative to project root):"
+    default: "./tasks"
+
+  - key: REVIEW_STYLE
+    type: input
+    label: "Spec review style — standard | strict (multi-agent review):"
+    default: "standard"
+
+  - key: AUTO_INSTALL
+    type: input
+    label: "Auto-install missing dependencies (product-manager skill, commit command)? — yes | no:"
+    default: "yes"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# COMPONENTS
+# ─────────────────────────────────────────────────────────────────────────────
+components:
+  # ── Skill: core feature-marker workflow ─────────────────────────────────
+  - id: feature-marker-skill
+    description: >-
+      Core feature-marker skill — 5-phase workflow from requirements to PR.
+      Auto-detects stack, manages checkpoints, generates PRD/TechSpec/Tasks,
+      and creates commits + pull requests.
+    skill:
+      source: skills/feature-marker
+      destination: feature-marker
+
+  # ── Hook: session start — stack + platform detection ────────────────────
+  - id: session-context-hook
+    description: >-
+      On session start, detects tech stack (iOS/Node/Rust/Python/Go),
+      git platform (GitHub/Azure/GitLab), reads CLAUDE.md, and prints
+      a feature-marker ready summary.
+    hookEvent: SessionStart
+    hook:
+      source: hooks/session-context.sh
+      destination: session-context.sh
+
+  # ── Hook: phase gate — checkpoint reminder ──────────────────────────────
+  - id: phase-gate-hook
+    description: >-
+      Before user prompts, checks for active feature-marker checkpoints
+      and reminds Claude to resume from the saved state.
+    hookEvent: UserPromptSubmit
+    hook:
+      source: hooks/phase-gate.sh
+      destination: phase-gate.sh
+
+  # ── Command: /feature ───────────────────────────────────────────────────
+  - id: feature-command
+    description: "Start or resume a feature workflow with /feature <slug>"
+    command:
+      source: commands/feature.md
+      destination: feature.md
+
+  # ── Command: /spec ──────────────────────────────────────────────────────
+  - id: spec-command
+    description: "Run spec-driven mode with multi-agent review via /spec"
+    command:
+      source: commands/spec.md
+      destination: spec.md
+
+  # ── Command: /resume ────────────────────────────────────────────────────
+  - id: resume-command
+    description: "Resume a paused feature workflow from checkpoint with /resume"
+    command:
+      source: commands/resume.md
+      destination: resume.md
+
+  # ── Command: /review ────────────────────────────────────────────────────
+  - id: review-command
+    description: "Run stack-aware code review checklist with /review"
+    command:
+      source: commands/review.md
+      destination: review.md
+
+  # ── Command: /commit ────────────────────────────────────────────────────
+  - id: commit-command
+    description: "Professional commit with platform-aware pre-commit checks via /commit"
+    command:
+      source: commands/commit.md
+      destination: commit.md
+
+  # ── Settings ────────────────────────────────────────────────────────────
+  - id: feature-marker-settings
+    description: "Plan mode + extended thinking for thoughtful feature development"
+    settingsFile: config/settings.json
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TEMPLATES — CLAUDE.local.md sections
+# ─────────────────────────────────────────────────────────────────────────────
+templates:
+  - sectionIdentifier: feature-marker
+    placeholders:
+      - __EXECUTION_MODE__
+      - __DOCS_PATH__
+      - __REVIEW_STYLE__
+      - __AUTO_INSTALL__
+    contentFile: templates/feature-marker.md
