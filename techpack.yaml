@@ -9,7 +9,7 @@ description: >-
   Reads CLAUDE.md conventions and adapts the workflow automatically.
   Includes checkpoint/resume, multi-agent spec review, and platform-aware testing.
 author: Vinicius Carvalho
-minMCSVersion: "2026.3.26"
+minMCSVersion: "2026.3.0"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # PROMPTS — collected at `mcs sync` time, injected into templates via __VAR__
